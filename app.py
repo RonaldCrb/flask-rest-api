@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
@@ -38,8 +38,32 @@ class SmartlogSchema(ma.Schema):
     fields = ('id', 'date', 'name', 'depth', 'leave_surface', 'leave_bottom', 'bottom_time')
 
 # inicializamos el esquema
-smartlog_schema = SmartlogSchema(strict=True)
-smartlogs_schema = SmartlogSchema(many=True, strict=True)
+smartlog_schema = SmartlogSchema()
+smartlogs_schema = SmartlogSchema(many=True)
+
+# crear Smartlog
+@app.route('/smartlogs', methods=['POST'])
+def add_smartlog():
+  date = request.json['date']
+  name = request.json['name']
+  depth = request.json['depth']
+  leave_surface = request.json['leave_surface']
+  leave_bottom = request.json['leave_bottom']
+  bottom_time = request.json['bottom_time']
+
+  new_smartlog = Smartlog(date, name, depth, leave_surface, leave_bottom, bottom_time)
+  db.session.add(new_smartlog)
+  db.session.commit()
+  return smartlog_schema.jsonify(new_smartlog)
+
+# listar todos los smartlogs
+@app.route('/smartlogs', methods=['GET'])
+def get_smartlogs():
+  all_smartlogs = Smartlog.query.all()
+  result = smartlogs_schema.dump(all_smartlogs)
+  print(result)
+  return jsonify(result.data)
+
 # corremos el servidor
 if __name__ == '__main__':
   app.run(debug=True)
